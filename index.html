@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BackpackBattles スタミナ計算機</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⚔️ BackpackBattles スタミナ計算機</h1>
+            <p>武器構成のスタミナ切れタイミングを可視化</p>
+        </header>
+
+        <div class="content">
+            <div class="inputs">
+                <!-- 武器登録セクション -->
+                <div class="section">
+                  <div class="section-title">武器登録</div>
+                  <select id="weaponPreset">
+                    <option value="">プリセット選択...</option>
+                    <option value="wooden_sword">木の件 (CD: 1.4s, スタミナ: 1)</option>
+                    <option value="bloom">ホウキ (CD: 1.7s, スタミナ: 1.2)</option>
+                    <option value="torch">たいまつ (CD: 1.4s, スタミナ: 1)</option>
+                    <option value="pan">フライパン (CD: 2.2s, スタミナ: 2)</option>
+                    <option value="spear">スピア (CD: 1.5s, スタミナ: 1)</option>
+                    <option value="hammer">ハンマー (CD: 2s, スタミナ: 3)</option>
+                  </select>
+                  <button class="btn btn-primary btn-block" onclick="addWeapon()">+ 武器追加</button>
+                  <div id="weaponList"></div>
+                </div>
+
+                <!-- スタミナアイテムセクション -->
+                <div class="section">
+                  <div class="section-title">スタミナアイテム</div>
+
+                  <select id="itemPreset">
+                    <option value="">アイテム選択...</option>
+                    <option value="banana">バナナ (CD: 5s, 回復: 1)</option>
+                    <option value="hero_potion">ヒーローポーション (回復: 2)</option>
+                    <option value="stamina_bag">スタミナバッグ (最大値: +1)</option>
+                  </select>
+                  <button class="btn btn-primary btn-block" onclick="addItem()">+ アイテム追加</button>
+                  <div id="itemList"></div>
+                </div>
+                <!-- バフ設定セクション -->
+                <div class="section">
+                    <div class="section-title">バフ/デバフ</div>
+
+                    <div class="input-group">
+                        <label>初期ヒート</label>
+                        <input type="number" id="initialHeat" value="0" step="1" min="0">
+                    </div>
+                    <div class="input-group">
+                        <label>ヒート蓄積 (スタック/秒)</label>
+                        <input type="number" id="heatRate" value="0" step="0.1" min="0">
+                    </div>
+                    <div class="input-group">
+                        <label>最大ヒート</label>
+                        <input type="number" id="maxHeat" value="100" step="1" min="0">
+                    </div>
+                    <div class="input-group">
+                        <label>冷気スタック</label>
+                        <input type="number" id="chillStacks" value="0" step="1" min="0">
+                    </div>
+                </div>
+
+                <!-- シミュレーション設定 -->
+                <div class="section">
+                    <div class="section-title">シミュレーション設定</div>
+                    <div class="input-group">
+                        <label>シミュレーション時間 (秒)</label>
+                        <input type="number" id="simDuration" value="30" step="1" min="5" max="60">
+                    </div>
+                    <button class="btn btn-primary btn-block" onclick="calculate()">計算実行</button>
+
+                </div>
+            </div>
+
+            <div class="outputs">
+                <!-- グラフ -->
+                <div class="section">
+                    <div class="section-title">スタミナ推移</div>
+                    <canvas id="staminaChart"></canvas>
+                </div>
+
+                <!-- 分析結果 -->
+                <div class="section">
+                    <div class="section-title">分析結果</div>
+                    <div id="analysisResults"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
