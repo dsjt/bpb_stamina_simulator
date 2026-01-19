@@ -20,7 +20,7 @@
                   <div class="section-title">武器登録</div>
                   <select id="weaponPreset">
                     <option value="">プリセット選択...</option>
-                    <option value="wooden_sword">木の件 (CD: 1.4s, スタミナ: 1)</option>
+                    <option value="wooden_sword">木の剣 (CD: 1.4s, スタミナ: 1)</option>
                     <option value="bloom">ホウキ (CD: 1.7s, スタミナ: 1.2)</option>
                     <option value="torch">たいまつ (CD: 1.4s, スタミナ: 1)</option>
                     <option value="pan">フライパン (CD: 2.2s, スタミナ: 2)</option>
@@ -44,26 +44,61 @@
                   <button class="btn btn-primary btn-block" onclick="addItem()">+ アイテム追加</button>
                   <div id="itemList"></div>
                 </div>
-                <!-- バフ設定セクション -->
-                <div class="section">
-                    <div class="section-title">バフ/デバフ</div>
 
-                    <div class="input-group">
-                        <label>初期ヒート</label>
-                        <input type="number" id="initialHeat" value="0" step="1" min="0">
+                <!-- その他のオプションセクション -->
+                <div class="section">
+                  <div class="section-title">その他のオプション</div>
+
+                  <div class="checkbox-group">
+                    <input type="checkbox" id="showHeatFreeze" onchange="toggleSection('heatFreezeSection', this.checked)">
+                    <label for="showHeatFreeze">ヒート・フリーズ設定を表示</label>
+                  </div>
+
+                  <div class="checkbox-group">
+                    <input type="checkbox" id="showPuzzleBox" onchange="toggleSection('puzzleBoxSection', this.checked)">
+                    <label for="showPuzzleBox">パズルボックス設定を表示</label>
+                  </div>
+                </div>
+
+                <!-- ヒート・フリーズセクション（初期非表示） -->
+                <div class="section" id="heatFreezeSection" style="display: none;">
+                  <div class="section-title">ヒート/フリーズ</div>
+
+                  <div class="input-group">
+                    <label>ヒート</label>
+                    <input type="number" id="initialHeat" value="0" step="1" min="0">
+                    <div class="info-text">ヒート1につきクールダウン2%短縮</div>
+                  </div>
+
+                  <div class="input-group">
+                    <label>フリーズ</label>
+                    <input type="number" id="freezeStacks" value="0" step="1" min="0">
+                    <div class="info-text">フリーズ1につきクールダウン2%延長</div>
+                  </div>
+                </div>
+
+                <!-- パズルボックスセクション（初期非表示） -->
+                <div class="section" id="puzzleBoxSection" style="display: none;">
+                  <div class="section-title">パズルボックス</div>
+
+                  <div class="input-group">
+                    <label>中に入れる武器</label>
+                    <div id="puzzleBoxWeaponList" style="max-height: 120px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; padding: 8px; background: #f8f9fa;">
+                      <!-- 武器チェックボックスを動的生成 -->
                     </div>
-                    <div class="input-group">
-                        <label>ヒート蓄積 (スタック/秒)</label>
-                        <input type="number" id="heatRate" value="0" step="0.1" min="0">
+                  </div>
+
+                  <div class="input-group">
+                    <label>中に入れるバナナ</label>
+                    <div id="puzzleBoxBananaList" style="max-height: 120px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; padding: 8px; background: #f8f9fa;">
+                      <!-- バナナチェックボックスを動的生成 -->
                     </div>
-                    <div class="input-group">
-                        <label>最大ヒート</label>
-                        <input type="number" id="maxHeat" value="100" step="1" min="0">
-                    </div>
-                    <div class="input-group">
-                        <label>冷気スタック</label>
-                        <input type="number" id="chillStacks" value="0" step="1" min="0">
-                    </div>
+                  </div>
+
+                  <div class="info-text">
+                    0～5秒: 使用速度-20% (速度補正0.8倍)<br>
+                    5秒以降: 使用速度+55% (速度補正1.55倍)
+                  </div>
                 </div>
 
                 <!-- シミュレーション設定 -->

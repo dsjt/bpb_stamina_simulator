@@ -24,15 +24,19 @@ const itemPresets = {
 
 // カラーパレット
 const colorPalette = [
-    '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A',
-    '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E2'
+    '#FF6B6B', // 赤
+    '#4ECDC4', // 青緑
+    '#FFA500', // オレンジ
+    '#9B59B6', // 紫
+    '#2ECC71', // 緑
+    '#F1C40F', // 黄色
 ];
 
 
 // 初期化
 function init() {
     // 初期武器を追加
-    addWeapon();
+    // addWeapon();
 }
 
 // 武器追加
@@ -61,7 +65,48 @@ function removeWeapon(id) {
 function updateWeapon(id, field, value) {
     const weapon = weapons.find(w => w.id === id);
     if (weapon) {
-        weapon[field] = parseFloat(value) || value;
+        weapon[field] = (typeof value === 'string' && !isNaN(value)) ? parseFloat(value) : value;
+    }
+}
+
+// パズルボックスの選択肢を更新
+function updatePuzzleBoxOptions() {
+    const weaponList = document.getElementById('puzzleBoxWeaponList');
+    const bananaList = document.getElementById('puzzleBoxBananaList');
+
+    // 武器のチェックボックスを更新
+    weaponList.innerHTML = '';
+    if (weapons.length === 0) {
+        weaponList.innerHTML = '<div style="color: #999; font-size: 13px;">武器がありません</div>';
+    } else {
+        weapons.forEach(weapon => {
+            const div = document.createElement('div');
+            div.className = 'checkbox-group';
+            div.style.margin = '4px 0';
+            div.innerHTML = `
+                <input type="checkbox" id="pbWeapon_${weapon.id}" value="${weapon.id}">
+                <label for="pbWeapon_${weapon.id}">${weapon.name}</label>
+            `;
+            weaponList.appendChild(div);
+        });
+    }
+
+    // バナナのチェックボックスを更新
+    bananaList.innerHTML = '';
+    const bananas = items.filter(item => item.type === 'banana');
+    if (bananas.length === 0) {
+        bananaList.innerHTML = '<div style="color: #999; font-size: 13px;">バナナがありません</div>';
+    } else {
+        bananas.forEach(banana => {
+            const div = document.createElement('div');
+            div.className = 'checkbox-group';
+            div.style.margin = '4px 0';
+            div.innerHTML = `
+                <input type="checkbox" id="pbBanana_${banana.id}" value="${banana.id}">
+                <label for="pbBanana_${banana.id}">${banana.name}</label>
+            `;
+            bananaList.appendChild(div);
+        });
     }
 }
 
@@ -89,7 +134,7 @@ function renderWeaponList() {
                         </div>
                         <div class="input-group">
                             <label>加速 (%)</label>
-                            <input type="number" value="${weapon.haste}" step="1" min="0"
+                            <input type="number" value="${weapon.haste}" step="10" min="0"
                                    onchange="updateWeapon(${weapon.id}, 'haste', this.value)">
                         </div>
                         <div class="input-group">
@@ -101,9 +146,10 @@ function renderWeaponList() {
                 `;
         container.appendChild(div);
     });
+
+    updatePuzzleBoxOptions();
 }
 
-// アイテム追加
 // アイテム追加
 function addItem() {
     const preset = document.getElementById('itemPreset').value;
@@ -131,11 +177,10 @@ function removeItem(id) {
 function updateItem(id, field, value) {
     const item = items.find(i => i.id === id);
     if (item) {
-        item[field] = parseFloat(value) || value;
+        item[field] = (typeof value === 'string' && !isNaN(value)) ? parseFloat(value) : value;
     }
 }
 
-// アイテムリスト描画
 // アイテムリスト描画
 function renderItemList() {
     const container = document.getElementById('itemList');
@@ -207,19 +252,52 @@ function renderItemList() {
 
         container.appendChild(div);
     });
+
+    updatePuzzleBoxOptions(); // 追加
+}
+
+// パズルボックスによる加速補正を取得
+function getPuzzleBoxHaste(time, itemId, itemType) {
+    // このアイテムがパズルボックス内にあるかチェック
+    let isInBox = false;
+    if (itemType === 'weapon') {
+        const checkbox = document.getElementById(`pbWeapon_${itemId}`);
+        isInBox = checkbox && checkbox.checked;
+    } else if (itemType === 'banana') {
+        const checkbox = document.getElementById(`pbBanana_${itemId}`);
+        isInBox = checkbox && checkbox.checked;
+    }
+
+    if (!isInBox) return 0;
+
+    // 時間による効果切り替え
+    if (time < 5) {
+        return -20; // -20%
+    } else {
+        return 55; // +55%
+    }
 }
 
 // スタミナシミュレーション
 function simulate() {
     const duration = parseFloat(document.getElementById('simDuration').value);
-    const dt = 0.1; // 時間刻み
+    const dt = 0.02; // 時間刻み
     const steps = Math.floor(duration / dt);
 
     // パラメータ取得
     const initialHeat = parseFloat(document.getElementById('initialHeat').value);
-    const heatRate = parseFloat(document.getElementById('heatRate').value);
-    const maxHeat = parseFloat(document.getElementById('maxHeat').value);
-    const chillStacks = parseFloat(document.getElementById('chillStacks').value);
+    const freezeStacks = parseFloat(document.getElementById('freezeStacks').value);
+    // ヒート・フリーズによる加速補正（%）
+    const heatFreezeHaste = (initialHeat * 2) - (freezeStacks * 2);
+
+    // デバッグ：武器の初期クールダウン計算
+    console.log('--- 武器の初期クールダウン計算 ---');
+    weapons.forEach(weapon => {
+        const puzzleBoxHaste = getPuzzleBoxHaste(0, weapon.id, 'weapon');
+        const totalHaste = weapon.haste + puzzleBoxHaste + heatFreezeHaste;
+        const effectiveCd = weapon.cooldown / (1 + totalHaste / 100);
+        console.log(`${weapon.name}: base=${weapon.cooldown}s, haste=${weapon.haste}%, pbHaste=${puzzleBoxHaste}%, total=${totalHaste}%, effective=${effectiveCd}s`);
+    });
 
     // アイテムから最大スタミナボーナスを計算
     const staminaBags = items.filter(item => item.type === 'stamina_bag');
@@ -235,28 +313,30 @@ function simulate() {
 
     // 武器ごとのクールダウントラッカー
     const weaponCooldowns = weapons.map(weapon => {
-        const speedModifier = 1 + (initialHeat * 0.02) - (chillStacks * 0.02);
-        const effectiveCd = weapon.cooldown / ((1 + weapon.haste / 100) * speedModifier);
-        return effectiveCd; // 0 から effectiveCd に変更
+        const puzzleBoxHaste = getPuzzleBoxHaste(0, weapon.id, 'weapon');
+        const totalHaste = Number(weapon.haste) + Number(puzzleBoxHaste) + Number(heatFreezeHaste);
+        const effectiveCd = weapon.cooldown / (1 + totalHaste / 100);
+        return effectiveCd;
     });
 
     // バナナアイテムの取得
     const bananas = items.filter(item => item.type === 'banana');
-    const bananaCooldowns = bananas.map(() => 0);
+    const bananaCooldowns = bananas.map(banana => {
+        const puzzleBoxHaste = getPuzzleBoxHaste(0, banana.id, 'banana');
+        const totalHaste = Number(banana.haste) + Number(puzzleBoxHaste) + Number(heatFreezeHaste);
+        const effectiveCd = banana.cooldown / (1 + totalHaste / 100);
+        return effectiveCd;
+    });
 
     // ヒーローポーション
     const heroPotions = items.filter(item => item.type === 'hero_potion');
-    const heroPotionUsed = {}; // {itemId: usedCount}
+    let heroPotionUsed = 0;
+    const totalHeroPotions = heroPotions.reduce((sum, potion) => sum + potion.count, 0);
+    const heroPotionRecovery = heroPotions.length > 0 ? heroPotions[0].recovery : 0;
 
     // シミュレーション
     for (let step = 0; step <= steps; step++) {
         const time = step * dt;
-
-        // 現在のヒート計算
-        const currentHeat = Math.min(initialHeat + heatRate * time, maxHeat);
-
-        // 冷気・ヒートによる速度補正
-        const speedModifier = 1 + (currentHeat * 0.02) - (chillStacks * 0.02);
 
         // 自然回復（1秒に1スタミナ）
         stamina = Math.min(stamina + dt, maxStamina);
@@ -265,21 +345,11 @@ function simulate() {
         bananas.forEach((banana, idx) => {
             bananaCooldowns[idx] -= dt;
             if (bananaCooldowns[idx] <= 0) {
-                const effectiveBananaCd = banana.cooldown / ((1 + banana.haste / 100) * speedModifier);
+                const puzzleBoxHaste = getPuzzleBoxHaste(time, banana.id, 'banana');
+                const totalHaste = Number(banana.haste) + Number(puzzleBoxHaste) + Number(heatFreezeHaste);
+                const effectiveBananaCd = banana.cooldown / (1 + totalHaste / 100);
                 stamina = Math.min(stamina + banana.recovery, maxStamina);
                 bananaCooldowns[idx] = effectiveBananaCd;
-            }
-        });
-
-        heroPotions.forEach(potion => {
-            if (!heroPotionUsed[potion.id]) {
-                heroPotionUsed[potion.id] = 0;
-            }
-
-            // スタミナが最大値の半分以下になったら使用
-            if (stamina <= maxStamina / 2 && heroPotionUsed[potion.id] < potion.count) {
-                stamina = Math.min(stamina + potion.recovery, maxStamina);
-                heroPotionUsed[potion.id]++;
             }
         });
 
@@ -288,7 +358,9 @@ function simulate() {
             weaponCooldowns[idx] -= dt;
 
             if (weaponCooldowns[idx] <= 0) {
-                const effectiveCd = weapon.cooldown / ((1 + weapon.haste / 100) * speedModifier);
+                const puzzleBoxHaste = getPuzzleBoxHaste(time, weapon.id, 'weapon');
+                const totalHaste = Number(weapon.haste) + Number(puzzleBoxHaste) + Number(heatFreezeHaste);
+                const effectiveCd = weapon.cooldown / (1 + totalHaste / 100);
 
                 if (stamina >= weapon.stamina) {
                     // 攻撃成功
@@ -302,15 +374,33 @@ function simulate() {
                     });
                     weaponCooldowns[idx] = effectiveCd;
                 } else {
-                    // スタミナ切れ
-                    weaponFires.push({
-                        time: time,
-                        weapon: weapon.name,
-                        weaponId: weapon.id,
-                        color: weapon.color,
-                        success: false
-                    });
-                    weaponCooldowns[idx] = effectiveCd;
+                    // スタミナ不足
+                    // ヒーローポーションがあれば使用
+                    if (heroPotionUsed < totalHeroPotions && stamina + heroPotionRecovery >= weapon.stamina) {
+                        stamina = Math.min(stamina + heroPotionRecovery, maxStamina);
+                        heroPotionUsed++;
+
+                        // ポーション使用後に攻撃成功
+                        stamina -= weapon.stamina;
+                        weaponFires.push({
+                            time: time,
+                            weapon: weapon.name,
+                            weaponId: weapon.id,
+                            color: weapon.color,
+                            success: true
+                        });
+                        weaponCooldowns[idx] = effectiveCd;
+                    } else {
+                        // スタミナ切れ
+                        weaponFires.push({
+                            time: time,
+                            weapon: weapon.name,
+                            weaponId: weapon.id,
+                            color: weapon.color,
+                            success: false
+                        });
+                        weaponCooldowns[idx] = effectiveCd;
+                    }
                 }
             }
         });
@@ -320,13 +410,26 @@ function simulate() {
         staminaValues.push(stamina);
     }
 
-
-    return {
+    let results = {
         timePoints,
         staminaValues,
         weaponFires,
         maxStamina
     };
+
+    // デバッグ：武器の発射記録
+    console.log('--- 武器の発射記録 ---');
+    const weaponFireCount = {};
+    results.weaponFires.forEach(fire => {
+        const key = `${fire.weapon} (${fire.success ? '成功' : '失敗'})`;
+        weaponFireCount[key] = (weaponFireCount[key] || 0) + 1;
+    });
+    Object.entries(weaponFireCount).forEach(([key, count]) => {
+        console.log(`${key}: ${count}回`);
+    });
+
+    return results;
+
 }
 
 // グラフ描画
@@ -340,27 +443,63 @@ function drawChart(results) {
     // 武器攻撃マーカー用データセット
     const weaponDatasets = {};
     results.weaponFires.forEach(fire => {
-        const key = `${fire.weaponId}_${fire.success ? 'success' : 'fail'}`;
+        // 武器IDのみをキーにする（成功/失敗を区別しない）
+        const key = fire.weaponId;
 
         if (!weaponDatasets[key]) {
             weaponDatasets[key] = {
-                label: fire.success ? fire.weapon : `${fire.weapon} (スタミナ切れ)`,
-                data: [],
-                backgroundColor: fire.color,
-                borderColor: fire.color,
-                pointRadius: fire.success ? 4 : 6,
-                pointStyle: fire.success ? 'circle' : 'crossRot',
-                showLine: false,
-                order: 1
+                label: fire.weapon, // 武器名のみ
+                successData: [],
+                failData: []
             };
         }
 
-        weaponDatasets[key].data.push({
-            x: fire.time,
-            y: 0
-        });
+        if (fire.success) {
+            weaponDatasets[key].successData.push({
+                x: fire.time,
+                y: 0
+            });
+        } else {
+            weaponDatasets[key].failData.push({
+                x: fire.time,
+                y: 0
+            });
+        }
     });
 
+    // Chart.js用のデータセットに変換
+    const chartDatasets = [];
+    Object.entries(weaponDatasets).forEach(([weaponId, dataset]) => {
+        const weapon = weapons.find(w => w.id == weaponId);
+
+        // 成功データ
+        if (dataset.successData.length > 0) {
+            chartDatasets.push({
+                label: dataset.label,
+                data: dataset.successData,
+                backgroundColor: weapon.color,
+                borderColor: weapon.color,
+                pointRadius: 4,
+                pointStyle: 'circle',
+                showLine: false,
+                order: 1
+            });
+        }
+
+        // 失敗データ
+        if (dataset.failData.length > 0) {
+            chartDatasets.push({
+                label: dataset.label,
+                data: dataset.failData,
+                backgroundColor: weapon.color,
+                borderColor: weapon.color,
+                pointRadius: 6,
+                pointStyle: 'crossRot',
+                showLine: false,
+                order: 1,
+            });
+        }
+    });
 
     chart = new Chart(ctx, {
         type: 'line',
@@ -381,7 +520,7 @@ function drawChart(results) {
                     pointRadius: 0,
                     order: 2
                 },
-                ...Object.values(weaponDatasets)
+                ...chartDatasets
             ]
         },
         options: {
@@ -395,7 +534,22 @@ function drawChart(results) {
             plugins: {
                 legend: {
                     display: true,
-                    position: 'top'
+                    position: 'top',
+                    labels: {
+                        filter: function(legendItem, chartData) {
+                            // 同じラベルが既に存在する場合は2つ目以降を非表示
+                            const datasets = chartData.datasets;
+                            const currentLabel = legendItem.text;
+                            const currentIndex = legendItem.datasetIndex;
+
+                            for (let i = 0; i < currentIndex; i++) {
+                                if (datasets[i].label === currentLabel) {
+                                    return false;
+                                }
+                            }
+                            return true;
+                        }
+                    }
                 },
                 tooltip: {
                     callbacks: {
@@ -518,11 +672,64 @@ function displayAnalysis(results) {
     container.innerHTML = html;
 }
 
+// セクション表示切り替え
+function toggleSection(sectionId, show) {
+    const section = document.getElementById(sectionId);
+    section.style.display = show ? 'block' : 'none';
+}
+
 // 計算実行
 function calculate() {
     if (weapons.length === 0) {
         return;
     }
+
+    // デバッグ用：現在の状態を表示
+    console.log('=== 計算開始 ===');
+    console.log('武器一覧:');
+    weapons.forEach((weapon, idx) => {
+        console.log(`  [${idx}] ${weapon.name} (ID: ${weapon.id})`);
+        console.log(`      CD: ${weapon.cooldown}s, 加速: ${weapon.haste}%, スタミナ: ${weapon.stamina}`);
+        console.log(`      色: ${weapon.color}`);
+    });
+
+    console.log('アイテム一覧:');
+    items.forEach((item, idx) => {
+        console.log(`  [${idx}] ${item.name} (ID: ${item.id}, Type: ${item.type})`);
+        if (item.type === 'banana') {
+            console.log(`      CD: ${item.cooldown}s, 加速: ${item.haste}%, 回復: ${item.recovery}`);
+        } else if (item.type === 'hero_potion') {
+            console.log(`      個数: ${item.count}, 回復: ${item.recovery}`);
+        } else if (item.type === 'stamina_bag') {
+            console.log(`      個数: ${item.count}, 最大値ボーナス: ${item.maxBonus}`);
+        }
+    });
+
+    const initialHeat = parseFloat(document.getElementById('initialHeat').value);
+    const freezeStacks = parseFloat(document.getElementById('freezeStacks').value);
+    const heatFreezeHaste = (initialHeat * 2) - (freezeStacks * 2);
+    console.log(`ヒート/フリーズ: ヒート=${initialHeat}, フリーズ=${freezeStacks}, 合計加速=${heatFreezeHaste}%`);
+
+    const weaponCheckboxes = weapons.filter(w => {
+        const cb = document.getElementById(`pbWeapon_${w.id}`);
+        return cb && cb.checked;
+    }).map(w => w.name);
+
+    const bananaCheckboxes = items.filter(item => {
+        if (item.type !== 'banana') return false;
+        const cb = document.getElementById(`pbBanana_${item.id}`);
+        return cb && cb.checked;
+    }).map(item => item.name);
+
+    if (weaponCheckboxes.length > 0 || bananaCheckboxes.length > 0) {
+        console.log('パズルボックス: 有効');
+        console.log(`  武器: ${weaponCheckboxes.join(', ') || 'なし'}`);
+        console.log(`  バナナ: ${bananaCheckboxes.join(', ') || 'なし'}`);
+    } else {
+        console.log('パズルボックス: 無効');
+    }
+
+    console.log('================');
 
     const results = simulate();
     drawChart(results);
