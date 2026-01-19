@@ -313,22 +313,12 @@ function simulate() {
     const weaponFires = [];
     const staminaDepletions = [];
 
-    // 武器ごとのクールダウントラッカー
-    const weaponCooldowns = weapons.map(weapon => {
-        const puzzleBoxHaste = getPuzzleBoxHaste(0, weapon.id, 'weapon');
-        const totalHaste = Number(weapon.haste) + Number(puzzleBoxHaste) + Number(heatFreezeHaste);
-        const effectiveCd = weapon.cooldown / (1 + totalHaste / 100);
-        return effectiveCd;
-    });
+    // 武器ごとのクールダウン進行度トラッカー（0～1、1で発動）
+    const weaponCooldownProgress = weapons.map(() => 0);
 
-    // バナナアイテムの取得
+    // バナナアイテムの取得と進行度初期化
     const bananas = items.filter(item => item.type === 'banana');
-    const bananaCooldowns = bananas.map(banana => {
-        const puzzleBoxHaste = getPuzzleBoxHaste(0, banana.id, 'banana');
-        const totalHaste = Number(banana.haste) + Number(puzzleBoxHaste) + Number(heatFreezeHaste);
-        const effectiveCd = banana.cooldown / (1 + totalHaste / 100);
-        return effectiveCd;
-    });
+    const bananaCooldownProgress = bananas.map(() => 0);
 
     // ヒーローポーション
     const heroPotions = items.filter(item => item.type === 'hero_potion');
@@ -344,26 +334,34 @@ function simulate() {
         stamina = Math.min(stamina + dt, maxStamina);
 
         // バナナ
+        // バナナ
         bananas.forEach((banana, idx) => {
-            bananaCooldowns[idx] -= dt;
-            if (bananaCooldowns[idx] <= 0) {
-                const puzzleBoxHaste = getPuzzleBoxHaste(time, banana.id, 'banana');
-                const totalHaste = Number(banana.haste) + Number(puzzleBoxHaste) + Number(heatFreezeHaste);
-                const effectiveBananaCd = banana.cooldown / (1 + totalHaste / 100);
+            // 現在の加速率を計算
+            const puzzleBoxHaste = getPuzzleBoxHaste(time, banana.id, 'banana');
+            const totalHaste = Number(banana.haste) + Number(puzzleBoxHaste) + Number(heatFreezeHaste);
+            const effectiveBananaCd = banana.cooldown / (1 + totalHaste / 100);
+
+            // 進行度を更新
+            bananaCooldownProgress[idx] += dt / effectiveBananaCd;
+
+            // 進行度が1以上になったら発動
+            if (bananaCooldownProgress[idx] >= 1) {
                 stamina = Math.min(stamina + banana.recovery, maxStamina);
-                bananaCooldowns[idx] = effectiveBananaCd;
+                bananaCooldownProgress[idx] -= 1;
             }
         });
 
         // 武器の攻撃処理
         weapons.forEach((weapon, idx) => {
-            weaponCooldowns[idx] -= dt;
+            // 現在の加速率を計算
+            const puzzleBoxHaste = getPuzzleBoxHaste(time, weapon.id, 'weapon');
+            const totalHaste = Number(weapon.haste) + Number(puzzleBoxHaste) + Number(heatFreezeHaste);
+            const effectiveCd = weapon.cooldown / (1 + totalHaste / 100);
 
-            if (weaponCooldowns[idx] <= 0) {
-                const puzzleBoxHaste = getPuzzleBoxHaste(time, weapon.id, 'weapon');
-                const totalHaste = Number(weapon.haste) + Number(puzzleBoxHaste) + Number(heatFreezeHaste);
-                const effectiveCd = weapon.cooldown / (1 + totalHaste / 100);
-
+            // 進行度を更新（dtをクールダウンで割った値を加算）
+            weaponCooldownProgress[idx] += dt / effectiveCd;
+            // 進行度が1以上になったら発動
+            if (weaponCooldownProgress[idx] >= 1) {
                 if (stamina >= weapon.stamina) {
                     // 攻撃成功
                     stamina -= weapon.stamina;
@@ -374,7 +372,7 @@ function simulate() {
                         color: weapon.color,
                         success: true
                     });
-                    weaponCooldowns[idx] = effectiveCd;
+                    weaponCooldownProgress[idx] -= 1; // 進行度をリセット（余剰分は保持）
                 } else {
                     // スタミナ不足
                     // ヒーローポーションがあれば使用
@@ -391,7 +389,7 @@ function simulate() {
                             color: weapon.color,
                             success: true
                         });
-                        weaponCooldowns[idx] = effectiveCd;
+                        weaponCooldownProgress[idx] -= 1;
                     } else {
                         // スタミナ切れ
                         weaponFires.push({
@@ -401,7 +399,7 @@ function simulate() {
                             color: weapon.color,
                             success: false
                         });
-                        weaponCooldowns[idx] = effectiveCd;
+                        weaponCooldownProgress[idx] -= 1;
                     }
                 }
             }
