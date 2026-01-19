@@ -13,6 +13,8 @@ const weaponPresets = {
     pan: { name: 'フライパン', cooldown: 2.2, haste: 0, stamina: 2 },
     hammer: { name: 'ハンマー', cooldown: 2.0, haste: 0, stamina: 3 },
     spear: { name: 'スピア', cooldown: 1.5, haste: 0, stamina: 1 },
+    totem: { name: '殻のトーテム', cooldown: 3.6, haste: 0, stamina: 2 },
+    attack_claw: { name: 'アタッククロー', cooldown: 1.6, haste: 0, stamina: 0.5 },
 };
 
 // アイテムプリセットデータ
