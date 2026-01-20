@@ -22,7 +22,8 @@ const itemPresets = {
     banana: { name: 'バナナ', type: 'banana', cooldown: 5, haste: 0, recovery: 1 },
     hero_potion: { name: 'ヒーローポーション', type: 'hero_potion', count: 1, recovery: 2 },
     stamina_bag: { name: 'スタミナバッグ', type: 'stamina_bag', count: 1, maxBonus: 1 },
-    courage_star: { name: '勇気の星', type: 'courage_star', staminaReduction: 5 }
+    courage_star: { name: '勇気の星', type: 'courage_star', staminaReduction: 5 },
+    monkey_blacksmith: { name: 'サルでもわかる鍛冶', type: 'monkey_blacksmith', staminaReduction: 25 }
 };
 
 // カラーパレット
@@ -72,45 +73,73 @@ function updateWeapon(id, field, value) {
     }
 }
 
-// パズルボックスの選択肢を更新
-function updatePuzzleBoxOptions() {
-    const weaponList = document.getElementById('puzzleBoxWeaponList');
-    const bananaList = document.getElementById('puzzleBoxBananaList');
+// パズルボックスとサルでもわかる鍛冶の選択肢を更新
+function updateWeaponSelections() {
+    // パズルボックス用
+    const puzzleBoxWeaponList = document.getElementById('puzzleBoxWeaponList');
+    const puzzleBoxBananaList = document.getElementById('puzzleBoxBananaList');
 
-    // 武器のチェックボックスを更新
-    weaponList.innerHTML = '';
-    if (weapons.length === 0) {
-        weaponList.innerHTML = '<div style="color: #999; font-size: 13px;">武器がありません</div>';
-    } else {
-        weapons.forEach(weapon => {
-            const div = document.createElement('div');
-            div.className = 'checkbox-group';
-            div.style.margin = '4px 0';
-            div.innerHTML = `
-                <input type="checkbox" id="pbWeapon_${weapon.id}" value="${weapon.id}">
-                <label for="pbWeapon_${weapon.id}">${weapon.name}</label>
-            `;
-            weaponList.appendChild(div);
-        });
+    // パズルボックス - 武器
+    if (puzzleBoxWeaponList) {
+        puzzleBoxWeaponList.innerHTML = '';
+        if (weapons.length === 0) {
+            puzzleBoxWeaponList.innerHTML = '<div style="color: #999; font-size: 13px;">武器がありません</div>';
+        } else {
+            weapons.forEach(weapon => {
+                const div = document.createElement('div');
+                div.className = 'checkbox-group';
+                div.style.margin = '4px 0';
+                div.innerHTML = `
+                    <input type="checkbox" id="pbWeapon_${weapon.id}" value="${weapon.id}">
+                    <label for="pbWeapon_${weapon.id}">${weapon.name} #${weapon.id}</label>
+                `;
+                puzzleBoxWeaponList.appendChild(div);
+            });
+        }
     }
 
-    // バナナのチェックボックスを更新
-    bananaList.innerHTML = '';
-    const bananas = items.filter(item => item.type === 'banana');
-    if (bananas.length === 0) {
-        bananaList.innerHTML = '<div style="color: #999; font-size: 13px;">バナナがありません</div>';
-    } else {
-        bananas.forEach(banana => {
-            const div = document.createElement('div');
-            div.className = 'checkbox-group';
-            div.style.margin = '4px 0';
-            div.innerHTML = `
-                <input type="checkbox" id="pbBanana_${banana.id}" value="${banana.id}">
-                <label for="pbBanana_${banana.id}">${banana.name}</label>
-            `;
-            bananaList.appendChild(div);
-        });
+    // パズルボックス - バナナ
+    if (puzzleBoxBananaList) {
+        puzzleBoxBananaList.innerHTML = '';
+        const bananas = items.filter(item => item.type === 'banana');
+        if (bananas.length === 0) {
+            puzzleBoxBananaList.innerHTML = '<div style="color: #999; font-size: 13px;">バナナがありません</div>';
+        } else {
+            bananas.forEach(banana => {
+                const div = document.createElement('div');
+                div.className = 'checkbox-group';
+                div.style.margin = '4px 0';
+                div.innerHTML = `
+                    <input type="checkbox" id="pbBanana_${banana.id}" value="${banana.id}">
+                    <label for="pbBanana_${banana.id}">${banana.name}</label>
+                `;
+                puzzleBoxBananaList.appendChild(div);
+            });
+        }
     }
+
+    // サルでもわかる鍛冶 - 各アイテムごとの武器リスト
+    const monkeyBlacksmiths = items.filter(item => item.type === 'monkey_blacksmith');
+    monkeyBlacksmiths.forEach(mbItem => {
+        const monkeyWeaponList = document.getElementById(`mbWeaponList_${mbItem.id}`);
+        if (monkeyWeaponList) {
+            monkeyWeaponList.innerHTML = '';
+            if (weapons.length === 0) {
+                monkeyWeaponList.innerHTML = '<div style="color: #999; font-size: 13px;">武器がありません</div>';
+            } else {
+                weapons.forEach(weapon => {
+                    const div = document.createElement('div');
+                    div.className = 'checkbox-group';
+                    div.style.margin = '4px 0';
+                    div.innerHTML = `
+                        <input type="checkbox" id="mbWeapon_${mbItem.id}_${weapon.id}" value="${weapon.id}">
+                        <label for="mbWeapon_${mbItem.id}_${weapon.id}">${weapon.name} #${weapon.id}</label>
+                    `;
+                    monkeyWeaponList.appendChild(div);
+                });
+            }
+        }
+    });
 }
 
 // 武器リスト描画
@@ -150,7 +179,7 @@ function renderWeaponList() {
         container.appendChild(div);
     });
 
-    updatePuzzleBoxOptions();
+    updateWeaponSelections();
 }
 
 // アイテム追加
@@ -265,12 +294,24 @@ function renderItemList() {
             </div>
         </div>
     `;
+        } else if (item.type === 'monkey_blacksmith') {
+            div.innerHTML = `
+                <div class="weapon-header">
+                    <input type="text" value="${item.name}" disabled style="flex: 1;">
+                    <button class="btn btn-danger" onclick="removeItem(${item.id})" style="padding: 4px 8px;">×</button>
+                </div>
+                <div class="input-group">
+                    <label>星の範囲内の合成武器（スタミナ消費-25%）</label>
+                    <div id="mbWeaponList_${item.id}" style="max-height: 120px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; padding: 8px; background: #f8f9fa; margin-top: 8px;">
+                        <!-- 武器チェックボックスを動的生成 -->
+                    </div>
+                </div>
+            `;
         }
 
         container.appendChild(div);
     });
-
-    updatePuzzleBoxOptions(); // 追加
+    updateWeaponSelections(); // 追加
 }
 
 // パズルボックスによる加速補正を取得
@@ -344,8 +385,12 @@ function simulate() {
 
     // 勇気の星によるスタミナ消費削減
     const courageStars = items.filter(item => item.type === 'courage_star');
-    const staminaReduction = courageStars.length > 0 ? courageStars[0].staminaReduction : 0;
+    const courageStarReduction = courageStars.length > 0 ? courageStars[0].staminaReduction : 0;
 
+    // サルでもわかる鍛冶によるスタミナ消費削減
+    const monkeyBlacksmiths = items.filter(item => item.type === 'monkey_blacksmith');
+    const hasMonkeyBlacksmith = monkeyBlacksmiths.length > 0;
+    const monkeyBlacksmithReduction = hasMonkeyBlacksmith ? monkeyBlacksmiths[0].staminaReduction : 0;
 
     // シミュレーション
     for (let step = 0; step <= steps; step++) {
@@ -377,7 +422,20 @@ function simulate() {
             const puzzleBoxHaste = getPuzzleBoxHaste(time, weapon.id, 'weapon');
             const totalHaste = Number(weapon.haste) + Number(puzzleBoxHaste) + Number(heatFreezeHaste);
             const effectiveCd = weapon.cooldown / (1 + totalHaste / 100);
-            const actualStamina = weapon.stamina * (1 - staminaReduction / 100);
+
+            // スタミナ消費削減を計算
+            let totalReduction = courageStarReduction;
+            // サルでもわかる鍛冶の効果チェック
+            if (hasMonkeyBlacksmith) {
+                monkeyBlacksmiths.forEach(mbItem => {
+                    const checkbox = document.getElementById(`mbWeapon_${mbItem.id}_${weapon.id}`);
+                    if (checkbox && checkbox.checked) {
+                        totalReduction += monkeyBlacksmithReduction;
+                    }
+                });
+            }
+
+            const actualStamina = weapon.stamina * (1 - totalReduction / 100);
 
             // 進行度を更新（dtをクールダウンで割った値を加算）
             weaponCooldownProgress[idx] += dt / effectiveCd;
@@ -727,7 +785,10 @@ function calculate() {
             console.log(`      個数: ${item.count}, 最大値ボーナス: ${item.maxBonus}`);
         } else if (item.type === 'courage_star') {
             console.log(`      スタミナ消費削減: -${item.staminaReduction}%`);
+        } else if (item.type === 'monkey_blacksmith') {
+            console.log(`      スタミナ消費削減: -${item.staminaReduction}%（星範囲内）`);
         }
+
     });
 
     const initialHeat = parseFloat(document.getElementById('initialHeat').value);
@@ -754,6 +815,18 @@ function calculate() {
         console.log('パズルボックス: 無効');
     }
 
+    // サルでもわかる鍛冶のチェック
+    const monkeyBlacksmiths = items.filter(item => item.type === 'monkey_blacksmith');
+    monkeyBlacksmiths.forEach(mbItem => {
+        const selectedWeapons = weapons.filter(w => {
+            const cb = document.getElementById(`mbWeapon_${mbItem.id}_${w.id}`);
+            return cb && cb.checked;
+        }).map(w => `${w.name} #${w.id}`);
+
+        if (selectedWeapons.length > 0) {
+            console.log(`サルでもわかる鍛冶 (ID: ${mbItem.id}): ${selectedWeapons.join(', ')}`);
+        }
+    });
     console.log('================');
 
     const results = simulate();
