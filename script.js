@@ -21,7 +21,8 @@ const weaponPresets = {
 const itemPresets = {
     banana: { name: 'バナナ', type: 'banana', cooldown: 5, haste: 0, recovery: 1 },
     hero_potion: { name: 'ヒーローポーション', type: 'hero_potion', count: 1, recovery: 2 },
-    stamina_bag: { name: 'スタミナバッグ', type: 'stamina_bag', count: 1, maxBonus: 1 }
+    stamina_bag: { name: 'スタミナバッグ', type: 'stamina_bag', count: 1, maxBonus: 1 },
+    courage_star: { name: '勇気の星', type: 'courage_star', staminaReduction: 5 }
 };
 
 // カラーパレット
@@ -141,7 +142,7 @@ function renderWeaponList() {
                         </div>
                         <div class="input-group">
                             <label>スタミナ</label>
-                            <input type="number" value="${weapon.stamina}" step="1" min="1"
+                            <input type="number" value="${weapon.stamina}" step="0.1" min="1"
                                    onchange="updateWeapon(${weapon.id}, 'stamina', this.value)">
                         </div>
                     </div>
@@ -250,6 +251,20 @@ function renderItemList() {
                     </div>
                 </div>
             `;
+        } else if (item.type === 'courage_star') {
+            div.innerHTML = `
+        <div class="weapon-header">
+            <input type="text" value="${item.name}" disabled style="flex: 1;">
+            <button class="btn btn-danger" onclick="removeItem(${item.id})" style="padding: 4px 8px;">×</button>
+        </div>
+        <div class="weapon-stats">
+            <div class="input-group">
+                <label>スタミナ消費削減</label>
+                <input type="number" value="${item.staminaReduction}" disabled>
+                <div class="info-text">-${item.staminaReduction}%</div>
+            </div>
+        </div>
+    `;
         }
 
         container.appendChild(div);
@@ -292,6 +307,7 @@ function simulate() {
     // ヒート・フリーズによる加速補正（%）
     const heatFreezeHaste = (initialHeat * 2) - (freezeStacks * 2);
 
+
     // デバッグ：武器の初期クールダウン計算
     console.log('--- 武器の初期クールダウン計算 ---');
     weapons.forEach(weapon => {
@@ -326,6 +342,11 @@ function simulate() {
     const totalHeroPotions = heroPotions.reduce((sum, potion) => sum + potion.count, 0);
     const heroPotionRecovery = heroPotions.length > 0 ? heroPotions[0].recovery : 0;
 
+    // 勇気の星によるスタミナ消費削減
+    const courageStars = items.filter(item => item.type === 'courage_star');
+    const staminaReduction = courageStars.length > 0 ? courageStars[0].staminaReduction : 0;
+
+
     // シミュレーション
     for (let step = 0; step <= steps; step++) {
         const time = step * dt;
@@ -333,7 +354,6 @@ function simulate() {
         // 自然回復（1秒に1スタミナ）
         stamina = Math.min(stamina + dt, maxStamina);
 
-        // バナナ
         // バナナ
         bananas.forEach((banana, idx) => {
             // 現在の加速率を計算
@@ -357,14 +377,17 @@ function simulate() {
             const puzzleBoxHaste = getPuzzleBoxHaste(time, weapon.id, 'weapon');
             const totalHaste = Number(weapon.haste) + Number(puzzleBoxHaste) + Number(heatFreezeHaste);
             const effectiveCd = weapon.cooldown / (1 + totalHaste / 100);
+            const actualStamina = weapon.stamina * (1 - staminaReduction / 100);
 
             // 進行度を更新（dtをクールダウンで割った値を加算）
             weaponCooldownProgress[idx] += dt / effectiveCd;
+
             // 進行度が1以上になったら発動
             if (weaponCooldownProgress[idx] >= 1) {
-                if (stamina >= weapon.stamina) {
+
+                if (stamina >= actualStamina) {
                     // 攻撃成功
-                    stamina -= weapon.stamina;
+                    stamina -= actualStamina;
                     weaponFires.push({
                         time: time,
                         weapon: weapon.name,
@@ -376,12 +399,12 @@ function simulate() {
                 } else {
                     // スタミナ不足
                     // ヒーローポーションがあれば使用
-                    if (heroPotionUsed < totalHeroPotions && stamina + heroPotionRecovery >= weapon.stamina) {
+                    if (heroPotionUsed < totalHeroPotions && stamina + heroPotionRecovery >= actualStamina) {
                         stamina = Math.min(stamina + heroPotionRecovery, maxStamina);
                         heroPotionUsed++;
 
                         // ポーション使用後に攻撃成功
-                        stamina -= weapon.stamina;
+                        stamina -= actualStamina;
                         weaponFires.push({
                             time: time,
                             weapon: weapon.name,
@@ -702,6 +725,8 @@ function calculate() {
             console.log(`      個数: ${item.count}, 回復: ${item.recovery}`);
         } else if (item.type === 'stamina_bag') {
             console.log(`      個数: ${item.count}, 最大値ボーナス: ${item.maxBonus}`);
+        } else if (item.type === 'courage_star') {
+            console.log(`      スタミナ消費削減: -${item.staminaReduction}%`);
         }
     });
 

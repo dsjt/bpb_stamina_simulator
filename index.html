@@ -42,6 +42,7 @@
                     <option value="banana">バナナ (CD: 5s, 回復: 1)</option>
                     <option value="hero_potion">ヒーローポーション (回復: 2)</option>
                     <option value="stamina_bag">スタミナバッグ (最大値: +1)</option>
+                    <option value="courage_star">勇気の星 (スタミナ消費: -5%)</option>
                   </select>
                   <button class="btn btn-primary btn-block" onclick="addItem()">+ アイテム追加</button>
                   <div id="itemList"></div>
@@ -92,7 +93,7 @@
 
                   <div class="input-group">
                     <label>中に入れるバナナ</label>
-                    <div id="puzzleBoxBananaList" style="max-height: 120px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; padding: 8px; background: #f8f9fa;">
+                    <div id="puzzleBoxBananaList" style="max-height: 120px; overflow-y: auto; border: solid #ddd; border-radius: 4px; padding: 8px; background: #f8f9fa;">
                       <!-- バナナチェックボックスを動的生成 -->
                     </div>
                   </div>
