@@ -475,7 +475,7 @@ function drawChart(results) {
         // 成功データ
         if (dataset.successData.length > 0) {
             chartDatasets.push({
-                label: dataset.label,
+                label: `${dataset.label} #${weaponId}`, // IDを追加
                 data: dataset.successData,
                 backgroundColor: weapon.color,
                 borderColor: weapon.color,
@@ -489,7 +489,7 @@ function drawChart(results) {
         // 失敗データ
         if (dataset.failData.length > 0) {
             chartDatasets.push({
-                label: dataset.label,
+                label: `${dataset.label} #${weaponId}`, // IDを追加
                 data: dataset.failData,
                 backgroundColor: weapon.color,
                 borderColor: weapon.color,
