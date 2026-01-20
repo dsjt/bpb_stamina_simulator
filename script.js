@@ -71,6 +71,7 @@ function updateWeapon(id, field, value) {
     if (weapon) {
         weapon[field] = (typeof value === 'string' && !isNaN(value)) ? parseFloat(value) : value;
     }
+    updateWeaponSelections();
 }
 
 // パズルボックスとサルでもわかる鍛冶の選択肢を更新
