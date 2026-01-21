@@ -236,7 +236,7 @@ function renderItemList() {
                     </div>
                     <div class="input-group">
                         <label>加速 (%)</label>
-                        <input type="number" value="${item.haste}" step="1" min="0"
+                        <input type="number" value="${item.haste}" step="10" min="0"
                                onchange="updateItem(${item.id}, 'haste', this.value)">
                     </div>
                     <div class="input-group">
