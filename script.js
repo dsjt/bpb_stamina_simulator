@@ -9,12 +9,18 @@ let chart = null;
 const weaponPresets = {
     wooden_sword: { name: '木の剣', cooldown: 1.4, haste: 0, stamina: 1 }, // 追加
     bloom: { name: 'ホウキ', cooldown: 1.7, haste: 0, stamina: 1.2 },
-    torch: { name: 'たいまつ', cooldown: 1.4, haste: 0, stamina: 1 },
     pan: { name: 'フライパン', cooldown: 2.2, haste: 0, stamina: 2 },
-    hammer: { name: 'ハンマー', cooldown: 2.0, haste: 0, stamina: 3 },
+    short_bow: { name: 'ショートボウ', cooldown: 1.7, haste: 0, stamina: 0.7 },
+
+    torch: { name: 'たいまつ', cooldown: 1.4, haste: 0, stamina: 1 },
     spear: { name: 'スピア', cooldown: 1.5, haste: 0, stamina: 1 },
+    hammer: { name: 'ハンマー', cooldown: 2.0, haste: 0, stamina: 3 },
     totem: { name: '殻のトーテム', cooldown: 3.6, haste: 0, stamina: 2 },
+    shovel: { name: 'シャベル', cooldown: 2.4, haste: 0, stamina: 1.7 },
+
     attack_claw: { name: 'アタッククロー', cooldown: 1.6, haste: 0, stamina: 0.5 },
+    hungry_blade: { name: '飢えたる剣', cooldown: 1.6, haste: 0, stamina: 1 },
+    hero_sword: { name: '英雄の剣', cooldown: 1.4, haste: 0, stamina: 0.7 },
 };
 
 // アイテムプリセットデータ
