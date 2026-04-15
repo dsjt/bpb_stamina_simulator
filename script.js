@@ -26,6 +26,7 @@ const weaponPresets = {
 // アイテムプリセットデータ
 const itemPresets = {
     banana: { name: 'バナナ', type: 'banana', cooldown: 5, haste: 0, recovery: 1 },
+    bread: { name: 'パン', type: 'bread', cooldown: 5, haste: 0, recovery: 0.5, threshold: 2.5 },
     hero_potion: { name: 'ヒーローポーション', type: 'hero_potion', count: 1, recovery: 2 },
     stamina_bag: { name: 'スタミナバッグ', type: 'stamina_bag', count: 1, maxBonus: 1 },
     courage_star: { name: '勇気の星', type: 'courage_star', staminaReduction: 5 },
@@ -108,9 +109,9 @@ function updateWeaponSelections() {
     // パズルボックス - バナナ
     if (puzzleBoxBananaList) {
         puzzleBoxBananaList.innerHTML = '';
-        const bananas = items.filter(item => item.type === 'banana');
+        const bananas = items.filter(item => item.type === 'banana' || item.type === 'bread');
         if (bananas.length === 0) {
-            puzzleBoxBananaList.innerHTML = '<div style="color: #999; font-size: 13px;">バナナがありません</div>';
+            puzzleBoxBananaList.innerHTML = '<div style="color: #999; font-size: 13px;">バナナ・パンがありません</div>';
         } else {
             bananas.forEach(banana => {
                 const div = document.createElement('div');
@@ -251,6 +252,29 @@ function renderItemList() {
                     </div>
                 </div>
             `;
+        } else if (item.type === 'bread') {
+            div.innerHTML = `
+                <div class="weapon-header">
+                    <input type="text" value="${item.name}" disabled style="flex: 1;">
+                    <button class="btn btn-danger" onclick="removeItem(${item.id})" style="padding: 4px 8px;">×</button>
+                </div>
+                <div class="weapon-stats">
+                    <div class="input-group">
+                        <label>CD (秒)</label>
+                        <input type="number" value="${item.cooldown}" disabled>
+                    </div>
+                    <div class="input-group">
+                        <label>加速 (%)</label>
+                        <input type="number" value="${item.haste}" step="10" min="0"
+                               onchange="updateItem(${item.id}, 'haste', this.value)">
+                    </div>
+                    <div class="input-group">
+                        <label>回復量</label>
+                        <input type="number" value="${item.recovery}" disabled>
+                        <div class="info-text">スタミナ${item.threshold}未満のとき発動</div>
+                    </div>
+                </div>
+            `;
         } else if (item.type === 'hero_potion') {
             div.innerHTML = `
                 <div class="weapon-header">
@@ -328,7 +352,7 @@ function getPuzzleBoxHaste(time, itemId, itemType) {
     if (itemType === 'weapon') {
         const checkbox = document.getElementById(`pbWeapon_${itemId}`);
         isInBox = checkbox && checkbox.checked;
-    } else if (itemType === 'banana') {
+    } else if (itemType === 'banana' || itemType === 'bread') {
         const checkbox = document.getElementById(`pbBanana_${itemId}`);
         isInBox = checkbox && checkbox.checked;
     }
@@ -384,6 +408,10 @@ function simulate() {
     const bananas = items.filter(item => item.type === 'banana');
     const bananaCooldownProgress = bananas.map(() => 0);
 
+    // パンアイテムの取得と進行度初期化
+    const breads = items.filter(item => item.type === 'bread');
+    const breadCooldownProgress = breads.map(() => 0);
+
     // ヒーローポーション
     const heroPotions = items.filter(item => item.type === 'hero_potion');
     let heroPotionUsed = 0;
@@ -420,6 +448,22 @@ function simulate() {
             if (bananaCooldownProgress[idx] >= 1) {
                 stamina = Math.min(stamina + banana.recovery, maxStamina);
                 bananaCooldownProgress[idx] -= 1;
+            }
+        });
+
+        // パン
+        breads.forEach((bread, idx) => {
+            const puzzleBoxHaste = getPuzzleBoxHaste(time, bread.id, 'bread');
+            const totalHaste = Number(bread.haste) + Number(puzzleBoxHaste) + Number(heatFreezeHaste);
+            const effectiveBreadCd = bread.cooldown / (1 + totalHaste / 100);
+
+            breadCooldownProgress[idx] += dt / effectiveBreadCd;
+
+            if (breadCooldownProgress[idx] >= 1) {
+                if (stamina < bread.threshold) {
+                    stamina = Math.min(stamina + bread.recovery, maxStamina);
+                }
+                breadCooldownProgress[idx] -= 1;
             }
         });
 

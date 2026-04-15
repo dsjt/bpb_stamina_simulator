@@ -47,6 +47,7 @@
                   <select id="itemPreset">
                     <option value="">アイテム選択...</option>
                     <option value="banana">バナナ (CD: 5s, 回復: 1)</option>
+                    <option value="bread">パン (CD: 5s, 条件回復: 0.5 / スタミナ2.5未満)</option>
                     <option value="hero_potion">ヒーローポーション (回復: 2)</option>
                     <option value="stamina_bag">スタミナバッグ (最大値: +1)</option>
                     <option value="courage_star">勇気の星 (スタミナ消費: -5%)</option>
@@ -100,7 +101,7 @@
                   </div>
 
                   <div class="input-group">
-                    <label>中に入れるバナナ</label>
+                    <label>中に入れるバナナ・パン</label>
                     <div id="puzzleBoxBananaList" style="max-height: 120px; overflow-y: auto; border: solid #ddd; border-radius: 4px; padding: 8px; background: #f8f9fa;">
                       <!-- バナナチェックボックスを動的生成 -->
                     </div>
